@@ -28,23 +28,35 @@ function createSeededRNG(seed) {
 function gammaRandom(k, theta, rng) {
     theta = theta || 1;
     
+    // Para k entero, usar suma de exponenciales (más preciso y eficiente)
+    // Gamma(k, 1) con k entero = suma de k exponenciales independientes
+    if (Number.isInteger(k) && k > 0) {
+        let sum = 0;
+        for (let i = 0; i < k; i++) {
+            sum -= Math.log(rng());
+        }
+        return sum * theta;
+    }
+    
     if (k < 1) {
         // Para k < 1, usar el método de transformación inversa mejorado
         const u = rng();
         return gammaRandom(1 + k, theta, rng) * Math.pow(u, 1 / k);
     }
     
-    // Algoritmo de Marsaglia-Tsang para k >= 1
+    // Algoritmo de Marsaglia-Tsang para k >= 1 (no entero)
     const d = k - 1 / 3;
     const c = 1 / Math.sqrt(9 * d);
     
-    let x, v;
-    do {
-        // Generar x ~ N(0,1) usando Box-Muller
+    let x, v, u;
+    let accepted = false;
+    
+    while (!accepted) {
+        // Generar x ~ N(0,1) usando método polar (Box-Muller)
         let u1, u2, s;
         do {
-            u1 = rng();
-            u2 = rng();
+            u1 = 2 * rng() - 1; // Convertir a [-1, 1]
+            u2 = 2 * rng() - 1;
             s = u1 * u1 + u2 * u2;
         } while (s >= 1 || s === 0);
         
@@ -52,21 +64,26 @@ function gammaRandom(k, theta, rng) {
         x = u1 * multiplier;
         
         v = 1 + c * x;
-    } while (v <= 0);
-    
-    v = v * v * v;
-    const u = rng();
-    
-    if (u < 1 - 0.0331 * (x * x) * (x * x)) {
-        return d * v * theta;
+        
+        if (v <= 0) {
+            continue; // Rechazar y volver a intentar
+        }
+        
+        v = v * v * v;
+        u = rng();
+        
+        // Condición de aceptación rápida
+        if (u < 1 - 0.0331 * Math.pow(x, 4)) {
+            accepted = true;
+        }
+        // Condición de aceptación alternativa
+        else if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) {
+            accepted = true;
+        }
+        // Si no se acepta, continuar el loop
     }
     
-    if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) {
-        return d * v * theta;
-    }
-    
-    // Si falla, intentar de nuevo (recursión limitada)
-    return gammaRandom(k, theta, rng);
+    return d * v * theta;
 }
 
 /**
@@ -138,10 +155,13 @@ function getStatistics(results) {
         ? (sorted[n / 2 - 1] + sorted[n / 2]) / 2
         : sorted[Math.floor(n / 2)];
     
-    // Moda (aproximada usando histograma)
+    // Moda (aproximada usando histograma con bins más finos para mejor precisión)
+    // Usar bins más pequeños para mejor aproximación de la moda
+    const binSize = (max - min) / Math.min(100, Math.ceil(Math.sqrt(n))); // Bins más finos
     const histogram = {};
     results.forEach(val => {
-        const key = Math.round(val * 100) / 100; // Redondear a 2 decimales
+        const bin = Math.floor((val - min) / binSize);
+        const key = min + bin * binSize;
         histogram[key] = (histogram[key] || 0) + 1;
     });
     let mode = mean; // Default
@@ -153,24 +173,54 @@ function getStatistics(results) {
         }
     }
     
-    // Desviación estándar
-    const variance = results.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / n;
+    // Desviación estándar (usar n-1 para muestra, como @Risk)
+    const variance = n > 1 
+        ? results.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (n - 1)
+        : 0;
     const sd = Math.sqrt(variance);
     
-    // Asimetría (skewness)
-    const skewness = n > 1
-        ? results.reduce((sum, val) => sum + Math.pow((val - mean) / sd, 3), 0) / n
+    // Asimetría (skewness) - fórmula corregida para muestras (como @Risk)
+    // Usar: n / ((n-1)(n-2)) * sum(((x - mean) / sd)^3)
+    const skewness = n > 2 && sd > 0
+        ? (n / ((n - 1) * (n - 2))) * results.reduce((sum, val) => {
+            const z = (val - mean) / sd;
+            return sum + z * z * z;
+        }, 0)
         : 0;
     
-    // Curtosis (kurtosis)
-    const kurtosis = n > 1
-        ? results.reduce((sum, val) => sum + Math.pow((val - mean) / sd, 4), 0) / n - 3
+    // Curtosis (kurtosis) - @Risk reporta "raw kurtosis" (no excess)
+    // Excel KURT() devuelve excess kurtosis (kurtosis - 3), pero @Risk reporta raw kurtosis
+    // Fórmula raw kurtosis corregida para muestras:
+    // kurtosis = (n(n+1) / ((n-1)(n-2)(n-3))) * sum(z^4) - 3(n-1)^2 / ((n-2)(n-3)) + 3
+    // Para n grande, esto se aproxima a: sum(z^4) / n
+    const kurtosis = n > 3 && sd > 0
+        ? (n * (n + 1) / ((n - 1) * (n - 2) * (n - 3))) * results.reduce((sum, val) => {
+            const z = (val - mean) / sd;
+            return sum + z * z * z * z;
+        }, 0) - (3 * (n - 1) * (n - 1) / ((n - 2) * (n - 3))) + 3
         : 0;
     
-    // Percentiles
-    const percentile5 = sorted[Math.floor(n * 0.05)];
+    // Percentiles con interpolación (método compatible con @Risk)
+    // Usar interpolación lineal para percentiles 5 y 95
+    function percentile(sortedArray, p) {
+        if (p <= 0) return sortedArray[0];
+        if (p >= 1) return sortedArray[sortedArray.length - 1];
+        
+        const index = p * (sortedArray.length - 1);
+        const lower = Math.floor(index);
+        const upper = Math.ceil(index);
+        const weight = index - lower;
+        
+        if (lower === upper) {
+            return sortedArray[lower];
+        }
+        
+        return sortedArray[lower] * (1 - weight) + sortedArray[upper] * weight;
+    }
+    
+    const percentile5 = percentile(sorted, 0.05);
     const percentile50 = median;
-    const percentile95 = sorted[Math.floor(n * 0.95)];
+    const percentile95 = percentile(sorted, 0.95);
     
     // Intervalo de confianza 90%: half-width = 1.645 * (sd / sqrt(n))
     const ic90_halfWidth = 1.645 * (sd / Math.sqrt(n));
