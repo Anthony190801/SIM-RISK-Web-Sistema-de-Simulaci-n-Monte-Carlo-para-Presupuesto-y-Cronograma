@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIM-RISK Web - Simulación Monte Carlo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SIM-RISK Web</h1>
+            <p class="subtitle">Sistema de Simulación Monte Carlo para Presupuesto y Cronograma</p>
+        </header>
+
+        <main>
+            <section class="upload-section">
+                <h2>Cargar Archivo de Datos</h2>
+                <div class="upload-area" id="uploadArea">
+                    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display: none;">
+                    <label for="fileInput" class="upload-label">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p>Haz clic para seleccionar un archivo CSV o Excel</p>
+                        <p class="file-hint">Formatos soportados: .csv, .xlsx, .xls</p>
+                    </label>
+                </div>
+                <div id="fileInfo" class="file-info" style="display: none;"></div>
+            </section>
+
+            <section class="data-section" id="dataSection" style="display: none;">
+                <h2>Datos Cargados</h2>
+                <div class="table-container">
+                    <table id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>ITEM</th>
+                                <th>DESCRIPCIÓN</th>
+                                <th>MÍNIMO</th>
+                                <th>PROBABLE</th>
+                                <th>MÁXIMO</th>
+                                <th>Distribución (PERT)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTableBody">
+                        </tbody>
+                    </table>
+                </div>
+                <div class="stats-info" id="statsInfo"></div>
+            </section>
+
+            <!-- Sección de Simulación Monte Carlo -->
+            <section class="simulation-section" id="simulationSection" style="display: none;">
+                <h2>Simulación Monte Carlo</h2>
+                
+                <div class="simulation-controls">
+                    <div class="control-group">
+                        <label for="iterationsInput">Iteraciones:</label>
+                        <input type="number" id="iterationsInput" value="5000" min="100" max="100000" step="100">
+                    </div>
+                    <div class="control-group">
+                        <label for="binsInput">Número de Bins (opcional):</label>
+                        <input type="number" id="binsInput" value="" placeholder="Auto" min="5" max="100">
+                    </div>
+                    <button id="runSimulationBtn" class="btn-primary">Ejecutar Simulación</button>
+                </div>
+
+                <div class="visualization-container">
+                    <!-- Área central: Histograma -->
+                    <div class="histogram-area">
+                        <h3>Distribución de Resultados</h3>
+                        <div class="histogram-wrapper">
+                            <canvas id="histogramChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Panel lateral derecho: Estadísticas -->
+                    <div class="stats-panel">
+                        <h3>Estadísticas</h3>
+                        <div class="stats-table" id="statsTable">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
+                        <div class="left-x-control">
+                            <label for="leftXInput">Izquierda X:</label>
+                            <input type="number" id="leftXInput" step="0.01">
+                            <span class="left-p-value" id="leftPValue">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico Tornado -->
+                <div class="tornado-area" id="tornadoArea" style="display: none;">
+                    <h3>Contribución a la Varianza (Tornado)</h3>
+                    <div class="tornado-wrapper">
+                        <canvas id="tornadoChart"></canvas>
+                    </div>
+                    <div class="tornado-summary" id="tornadoSummary"></div>
+                </div>
+
+                <!-- Resultados Finales -->
+                <div class="final-results" id="finalResults" style="display: none;">
+                    <h3>Resultados Finales</h3>
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <div class="result-label">Certeza (95%)</div>
+                            <div class="result-value" id="certeza95_value">-</div>
+                            <div class="result-description">Percentil 95 de la simulación</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Probabilidad de Cumplimiento</div>
+                            <div class="result-value" id="probCumplimiento_value">-</div>
+                            <div class="result-description">% de resultados ≤ Suma Probable</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Contingencia Necesaria</div>
+                            <div class="result-value" id="contingencia_value">-</div>
+                            <div class="result-description">Certeza(95%) - Suma Probable</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Librerías externas -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Scripts -->
+    <script src="script.js"></script>
+    <script src="app.js"></script>
+    <script src="visualizations.js"></script>
+</body>
+</html>
+

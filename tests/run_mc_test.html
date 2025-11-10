@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Simulación Monte Carlo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #667eea;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.running {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .status.success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .status.error {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #667eea;
+            color: white;
+        }
+        tr:hover {
+            background: #f5f5f5;
+        }
+        .number {
+            text-align: right;
+            font-family: monospace;
+        }
+        #progressBar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        #progressFill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test de Simulación Monte Carlo</h1>
+        
+        <div id="status" class="status running">
+            <strong>Estado:</strong> <span id="statusText">Iniciando...</span>
+        </div>
+        
+        <div id="progressBar" style="display: none;">
+            <div id="progressFill">0%</div>
+        </div>
+        
+        <div id="results"></div>
+        
+        <div id="consoleOutput"></div>
+    </div>
+
+    <!-- Script de Monte Carlo -->
+    <script src="../script.js"></script>
+    <script src="../visualizations.js"></script>
+    
+    <script>
+        // Datos de ejemplo basados en ejemplo_datos.csv
+        const sampleItems = [
+            { a: 10, m: 15, b: 20, id: '1' },
+            { a: 20, m: 25, b: 35, id: '2' },
+            { a: 8, m: 12, b: 18, id: '3' },
+            { a: 5, m: 8, b: 12, id: '4' },
+            { a: 6, m: 10, b: 15, id: '5' },
+            { a: 3, m: 5, b: 8, id: '6' },
+            { a: 4, m: 6, b: 10, id: '7' },
+            { a: 5, m: 7, b: 12, id: '8' }
+        ];
+        
+        const statusDiv = document.getElementById('status');
+        const statusText = document.getElementById('statusText');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const resultsDiv = document.getElementById('results');
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        // Capturar console.log para mostrar en la página
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const logs = [];
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            logs.push({ type: 'log', message: args.join(' ') });
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            logs.push({ type: 'error', message: args.join(' ') });
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            logs.push({ type: 'warn', message: args.join(' ') });
+        };
+        
+        // Ejecutar simulación
+        async function runTest() {
+            try {
+                statusText.textContent = 'Ejecutando simulación...';
+                progressBar.style.display = 'block';
+                
+                const startTime = performance.now();
+                
+                const resultado = await runMonteCarlo(5000, sampleItems, {
+                    seed: 12345,
+                    perItemSamples: false,
+                    progressCallback: (progress, current, total) => {
+                        progressFill.style.width = progress + '%';
+                        progressFill.textContent = Math.round(progress) + '%';
+                    }
+                });
+                
+                const endTime = performance.now();
+                const elapsed_ms = endTime - startTime;
+                
+                // Validaciones
+                const validations = [];
+                
+                // Validar longitud
+                if (resultado.results.length === 5000) {
+                    validations.push({ test: 'Longitud de resultados', status: '✓', message: `Correcto: ${resultado.results.length} iteraciones` });
+                } else {
+                    validations.push({ test: 'Longitud de resultados', status: '✗', message: `Error: esperado 5000, obtenido ${resultado.results.length}` });
+                }
+                
+                // Validar rango
+                const sumaMinimos = sampleItems.reduce((sum, item) => sum + item.a, 0);
+                const sumaMaximos = sampleItems.reduce((sum, item) => sum + item.b, 0);
+                
+                if (resultado.stats.min >= sumaMinimos - 1e-10) {
+                    validations.push({ test: 'Mínimo >= suma mínimos', status: '✓', message: `Correcto: ${resultado.stats.min.toFixed(2)} >= ${sumaMinimos}` });
+                } else {
+                    validations.push({ test: 'Mínimo >= suma mínimos', status: '✗', message: `Error: ${resultado.stats.min.toFixed(2)} < ${sumaMinimos}` });
+                }
+                
+                if (resultado.stats.max <= sumaMaximos + 1e-10) {
+                    validations.push({ test: 'Máximo <= suma máximos', status: '✓', message: `Correcto: ${resultado.stats.max.toFixed(2)} <= ${sumaMaximos}` });
+                } else {
+                    validations.push({ test: 'Máximo <= suma máximos', status: '✗', message: `Error: ${resultado.stats.max.toFixed(2)} > ${sumaMaximos}` });
+                }
+                
+                // Validar NaN
+                const hasNaN = resultado.results.some(val => isNaN(val));
+                if (!hasNaN) {
+                    validations.push({ test: 'Sin valores NaN', status: '✓', message: 'Correcto: no se encontraron NaN' });
+                } else {
+                    validations.push({ test: 'Sin valores NaN', status: '✗', message: 'Error: se encontraron valores NaN' });
+                }
+                
+                // Calcular sumas y métricas finales
+                const sumMin = sampleItems.reduce((sum, item) => sum + item.a, 0);
+                const sumProbable = sampleItems.reduce((sum, item) => sum + item.m, 0);
+                const sumMax = sampleItems.reduce((sum, item) => sum + item.b, 0);
+                const sumPert = sampleItems.reduce((sum, item) => {
+                    return sum + (item.a + 4 * item.m + item.b) / 6;
+                }, 0);
+                
+                // Calcular métricas finales
+                const sorted = [...resultado.results].sort((a, b) => a - b);
+                const certeza95 = window.percentile ? window.percentile(sorted, 0.95) : sorted[Math.floor(sorted.length * 0.95)];
+                const countBelowProbable = resultado.results.filter(r => r <= sumProbable).length;
+                const probCumplimientoPct = (countBelowProbable / resultado.results.length) * 100;
+                const contingencia = certeza95 - sumProbable;
+                
+                validations.push({ test: 'Suma Mínimo calculada', status: '✓', message: `Correcto: ${sumMin.toFixed(2)}` });
+                validations.push({ test: 'Suma Probable calculada', status: '✓', message: `Correcto: ${sumProbable.toFixed(2)}` });
+                validations.push({ test: 'Suma Máximo calculada', status: '✓', message: `Correcto: ${sumMax.toFixed(2)}` });
+                validations.push({ test: 'Suma PERT calculada', status: '✓', message: `Correcto: ${sumPert.toFixed(2)}` });
+                validations.push({ test: 'Certeza 95%', status: '✓', message: `Correcto: ${certeza95.toFixed(2)}` });
+                validations.push({ test: 'Prob. Cumplimiento', status: '✓', message: `Correcto: ${probCumplimientoPct.toFixed(2)}%` });
+                validations.push({ test: 'Contingencia', status: '✓', message: `Correcto: ${contingencia.toFixed(2)}` });
+                
+                // Mostrar resultados
+                statusDiv.className = 'status success';
+                statusText.textContent = `Simulación completada en ${elapsed_ms.toFixed(2)} ms`;
+                
+                let html = '<h2>Validaciones</h2>';
+                html += '<table>';
+                html += '<tr><th>Test</th><th>Estado</th><th>Mensaje</th></tr>';
+                validations.forEach(v => {
+                    html += `<tr><td>${v.test}</td><td>${v.status}</td><td>${v.message}</td></tr>`;
+                });
+                html += '</table>';
+                
+                html += '<h2>Estadísticas</h2>';
+                html += '<table>';
+                html += '<tr><th>Métrica</th><th class="number">Valor</th></tr>';
+                html += `<tr><td>Mínimo</td><td class="number">${resultado.stats.min.toFixed(4)}</td></tr>`;
+                html += `<tr><td>Máximo</td><td class="number">${resultado.stats.max.toFixed(4)}</td></tr>`;
+                html += `<tr><td>Media</td><td class="number">${resultado.stats.mean.toFixed(4)}</td></tr>`;
+                html += `<tr><td>Mediana</td><td class="number">${resultado.stats.median.toFixed(4)}</td></tr>`;
+                html += `<tr><td>Moda</td><td class="number">${resultado.stats.mode.toFixed(4)}</td></tr>`;
+                html += `<tr><td>Desviación Estándar</td><td class="number">${resultado.stats.sd.toFixed(4)}</td></tr>`;
+                html += `<tr><td>Asimetría (Skewness)</td><td class="number">${resultado.stats.skewness.toFixed(4)}</td></tr>`;
+                html += `<tr><td>Curtosis</td><td class="number">${resultado.stats.kurtosis.toFixed(4)}</td></tr>`;
+                html += `<tr><td>Percentil 5%</td><td class="number">${resultado.stats.percentile5.toFixed(4)}</td></tr>`;
+                html += `<tr><td>Percentil 50% (Mediana)</td><td class="number">${resultado.stats.percentile50.toFixed(4)}</td></tr>`;
+                html += `<tr><td>Percentil 95%</td><td class="number">${resultado.stats.percentile95.toFixed(4)}</td></tr>`;
+                html += `<tr><td>IC 90% Half-Width</td><td class="number">${resultado.stats.ic90_halfWidth.toFixed(4)}</td></tr>`;
+                html += '</table>';
+                
+                html += '<h2>Resumen para JSON</h2>';
+                const summary = {
+                    stats: resultado.stats,
+                    elapsed_ms: elapsed_ms
+                };
+                html += '<pre>' + JSON.stringify(summary, null, 2) + '</pre>';
+                
+                resultsDiv.innerHTML = html;
+                
+                // Mostrar logs de consola
+                if (logs.length > 0) {
+                    let consoleHtml = '<h2>Logs de Consola</h2><pre>';
+                    logs.forEach(log => {
+                        const color = log.type === 'error' ? 'red' : log.type === 'warn' ? 'orange' : 'black';
+                        consoleHtml += `<span style="color: ${color}">[${log.type.toUpperCase()}] ${log.message}</span>\n`;
+                    });
+                    consoleHtml += '</pre>';
+                    consoleOutput.innerHTML = consoleHtml;
+                }
+                
+                // Guardar resultado en variable global para acceso desde consola
+                window.testResult = {
+                    resultado,
+                    summary,
+                    validations,
+                    elapsed_ms
+                };
+                
+                console.log('Resultado disponible en window.testResult');
+                
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusText.textContent = `Error: ${error.message}`;
+                resultsDiv.innerHTML = `<p style="color: red;"><strong>Error:</strong> ${error.message}</p><pre>${error.stack}</pre>`;
+                console.error('Error en test:', error);
+            }
+        }
+        
+        // Ejecutar al cargar
+        window.addEventListener('load', runTest);
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,568 @@
+/* SIM-RISK Web - Estilos principales */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    padding: 20px;
+    color: #333;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+}
+
+header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5em;
+    margin-bottom: 10px;
+    font-weight: 700;
+}
+
+.subtitle {
+    font-size: 1.1em;
+    opacity: 0.95;
+}
+
+main {
+    padding: 30px;
+}
+
+section {
+    margin-bottom: 40px;
+}
+
+section h2 {
+    color: #667eea;
+    margin-bottom: 20px;
+    font-size: 1.8em;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+/* Área de carga de archivos */
+.upload-section {
+    margin-bottom: 40px;
+}
+
+.upload-area {
+    border: 3px dashed #667eea;
+    border-radius: 12px;
+    padding: 60px 20px;
+    text-align: center;
+    background: #f8f9ff;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.upload-area:hover {
+    background: #f0f2ff;
+    border-color: #764ba2;
+    transform: translateY(-2px);
+}
+
+.upload-area.drag-over {
+    background: #e8ebff;
+    border-color: #764ba2;
+    transform: scale(1.02);
+}
+
+.upload-area.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.upload-label {
+    display: block;
+    cursor: pointer;
+}
+
+.upload-label svg {
+    color: #667eea;
+    margin-bottom: 15px;
+}
+
+.upload-label p {
+    font-size: 1.2em;
+    color: #667eea;
+    margin: 10px 0;
+    font-weight: 500;
+}
+
+.file-hint {
+    font-size: 0.9em;
+    color: #888;
+    font-weight: normal;
+}
+
+.file-info {
+    margin-top: 20px;
+    padding: 15px;
+    background: #e8f5e9;
+    border-radius: 8px;
+    border-left: 4px solid #4caf50;
+}
+
+.file-info p {
+    margin: 5px 0;
+    color: #2e7d32;
+}
+
+/* Tabla de datos */
+.table-container {
+    overflow-x: auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+tbody tr:hover {
+    background: #f5f5f5;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.number {
+    text-align: right;
+    font-family: 'Courier New', monospace;
+    font-weight: 500;
+}
+
+.pert-value {
+    color: #667eea;
+    font-weight: 600;
+}
+
+/* Fila de totales */
+.totals-row {
+    background: #fff9c4 !important;
+    font-weight: 700;
+}
+
+.totals-row:hover {
+    background: #fff59d !important;
+}
+
+.totals-row td {
+    border-top: 3px solid #fbc02d;
+    padding: 15px;
+}
+
+/* Estadísticas */
+.stats-info {
+    margin-top: 20px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    padding: 15px;
+    background: #f8f9ff;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-item.warning {
+    border-left-color: #ff9800;
+    background: #fff3e0;
+}
+
+.stat-label {
+    font-size: 0.9em;
+    color: #666;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+.stat-value {
+    font-size: 1.4em;
+    color: #667eea;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+}
+
+.stat-item.warning .stat-value {
+    color: #ff9800;
+}
+
+/* Sección de Simulación */
+.simulation-section {
+    margin-top: 40px;
+}
+
+.simulation-controls {
+    display: flex;
+    gap: 20px;
+    align-items: flex-end;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9ff;
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.control-group label {
+    font-size: 0.9em;
+    color: #666;
+    font-weight: 500;
+}
+
+.control-group input {
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1em;
+    width: 150px;
+    transition: border-color 0.3s;
+}
+
+.control-group input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-primary {
+    padding: 10px 24px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Contenedor de Visualizaciones */
+.visualization-container {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    gap: 30px;
+    margin-bottom: 40px;
+}
+
+/* Área del Histograma */
+.histogram-area {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.histogram-area h3 {
+    margin-bottom: 20px;
+    color: #667eea;
+    font-size: 1.3em;
+}
+
+.histogram-wrapper {
+    position: relative;
+    height: 400px;
+}
+
+.histogram-wrapper canvas {
+    max-height: 100%;
+}
+
+/* Panel Estadístico Lateral */
+.stats-panel {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.stats-panel h3 {
+    margin-bottom: 20px;
+    color: #667eea;
+    font-size: 1.3em;
+}
+
+.stats-table {
+    margin-bottom: 20px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-key {
+    font-weight: 500;
+    color: #666;
+    font-size: 0.95em;
+}
+
+.stat-val {
+    font-weight: 600;
+    color: #667eea;
+    font-family: 'Courier New', monospace;
+    text-align: right;
+}
+
+.left-x-control {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid #e0e0e0;
+}
+
+.left-x-control label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #666;
+    font-size: 0.95em;
+}
+
+.left-x-control input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1em;
+    margin-bottom: 8px;
+}
+
+.left-x-control input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.left-p-value {
+    display: block;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #667eea;
+    font-family: 'Courier New', monospace;
+}
+
+/* Área del Tornado */
+.tornado-area {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+}
+
+.tornado-area h3 {
+    margin-bottom: 20px;
+    color: #667eea;
+    font-size: 1.3em;
+}
+
+.tornado-wrapper {
+    position: relative;
+    height: 500px;
+    margin-bottom: 20px;
+}
+
+.tornado-wrapper canvas {
+    max-height: 100%;
+}
+
+.tornado-summary {
+    padding: 15px;
+    background: #f8f9ff;
+    border-radius: 6px;
+    font-size: 0.95em;
+    color: #666;
+}
+
+.tornado-summary strong {
+    color: #667eea;
+}
+
+/* Resultados Finales */
+.final-results {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 30px;
+}
+
+.final-results h3 {
+    margin-bottom: 20px;
+    color: #667eea;
+    font-size: 1.3em;
+}
+
+.results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.result-card {
+    background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.result-label {
+    font-size: 0.9em;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.result-value {
+    font-size: 2em;
+    font-weight: 700;
+    color: #667eea;
+    font-family: 'Courier New', monospace;
+    margin-bottom: 8px;
+}
+
+.result-description {
+    font-size: 0.85em;
+    color: #888;
+    font-style: italic;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .visualization-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-panel {
+        max-height: none;
+    }
+}
+
+@media (max-width: 768px) {
+    header h1 {
+        font-size: 2em;
+    }
+    
+    main {
+        padding: 20px;
+    }
+    
+    .upload-area {
+        padding: 40px 15px;
+    }
+    
+    table {
+        font-size: 0.9em;
+    }
+    
+    th, td {
+        padding: 10px;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .simulation-controls {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .control-group input {
+        width: 100%;
+    }
+    
+    .histogram-wrapper {
+        height: 300px;
+    }
+    
+    .tornado-wrapper {
+        height: 400px;
+    }
+}
+

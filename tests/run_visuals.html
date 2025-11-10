@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Visualizaciones SIM-RISK</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .test-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .test-info {
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>Test de Visualizaciones - SIM-RISK Web</h1>
+        <p>Demo completa con Histograma, Panel Estadístico y Gráfico Tornado</p>
+    </div>
+
+    <div class="container">
+        <div class="test-info">
+            <p><strong>Este test:</strong></p>
+            <ul>
+                <li>Carga automáticamente datos de ejemplo</li>
+                <li>Ejecuta simulación Monte Carlo con 5000 iteraciones</li>
+                <li>Muestra histograma con 3 regiones coloreadas</li>
+                <li>Muestra panel estadístico completo</li>
+                <li>Muestra gráfico Tornado con contribución a la varianza</li>
+            </ul>
+        </div>
+
+        <main>
+            <!-- Sección de Simulación Monte Carlo -->
+            <section class="simulation-section" id="simulationSection">
+                <h2>Simulación Monte Carlo</h2>
+                
+                <div class="simulation-controls">
+                    <div class="control-group">
+                        <label for="iterationsInput">Iteraciones:</label>
+                        <input type="number" id="iterationsInput" value="5000" min="100" max="100000" step="100">
+                    </div>
+                    <div class="control-group">
+                        <label for="binsInput">Número de Bins (opcional):</label>
+                        <input type="number" id="binsInput" value="" placeholder="Auto" min="5" max="100">
+                    </div>
+                    <button id="runSimulationBtn" class="btn-primary">Ejecutar Simulación</button>
+                </div>
+
+                <div class="visualization-container">
+                    <!-- Área central: Histograma -->
+                    <div class="histogram-area">
+                        <h3>Distribución de Resultados</h3>
+                        <div class="histogram-wrapper">
+                            <canvas id="histogramChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Panel lateral derecho: Estadísticas -->
+                    <div class="stats-panel">
+                        <h3>Estadísticas</h3>
+                        <div class="stats-table" id="statsTable">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
+                        <div class="left-x-control">
+                            <label for="leftXInput">Izquierda X:</label>
+                            <input type="number" id="leftXInput" step="0.01">
+                            <span class="left-p-value" id="leftPValue">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gráfico Tornado -->
+                <div class="tornado-area" id="tornadoArea" style="display: none;">
+                    <h3>Contribución a la Varianza (Tornado)</h3>
+                    <div class="tornado-wrapper">
+                        <canvas id="tornadoChart"></canvas>
+                    </div>
+                    <div class="tornado-summary" id="tornadoSummary"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Librerías externas -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Scripts -->
+    <script src="../script.js"></script>
+    <script src="../visualizations.js"></script>
+    
+    <script>
+        // Datos de ejemplo (basados en ejemplo_datos.csv)
+        const sampleItems = [
+            { a: 10, m: 15, b: 20, id: '1', descripcion: 'Desarrollo Frontend' },
+            { a: 20, m: 25, b: 35, id: '2', descripcion: 'Desarrollo Backend' },
+            { a: 8, m: 12, b: 18, id: '3', descripcion: 'Base de Datos' },
+            { a: 5, m: 8, b: 12, id: '4', descripcion: 'Testing y QA' },
+            { a: 6, m: 10, b: 15, id: '5', descripcion: 'Diseño UI/UX' },
+            { a: 3, m: 5, b: 8, id: '6', descripcion: 'Documentación' },
+            { a: 4, m: 6, b: 10, id: '7', descripcion: 'Despliegue' },
+            { a: 5, m: 7, b: 12, id: '8', descripcion: 'Configuración Servidor' }
+        ];
+        
+        // Simular loadedData global
+        window.loadedData = sampleItems.map(item => ({
+            item: item.id,
+            descripcion: item.descripcion,
+            minimo: item.a,
+            probable: item.m,
+            maximo: item.b,
+            pert: (item.a + 4 * item.m + item.b) / 6
+        }));
+        
+        // Ejecutar simulación automáticamente al cargar
+        window.addEventListener('load', async () => {
+            console.log('Iniciando test de visualizaciones...');
+            
+            try {
+                const iterations = 5000;
+                const items = sampleItems.map(item => ({
+                    a: item.a,
+                    m: item.m,
+                    b: item.b,
+                    id: item.id,
+                    descripcion: item.descripcion
+                }));
+                
+                console.log(`Ejecutando simulación con ${iterations} iteraciones...`);
+                
+                const resultado = await runMonteCarlo(iterations, items, {
+                    seed: 12345,
+                    perItemSamples: true,
+                    progressCallback: (progress) => {
+                        const btn = document.getElementById('runSimulationBtn');
+                        if (btn) {
+                            btn.textContent = `Ejecutando... ${Math.round(progress)}%`;
+                        }
+                    }
+                });
+                
+                console.log('Simulación completada. Creando visualizaciones...');
+                
+                // Configurar variables globales para visualizations.js
+                window.currentSimulationResult = resultado;
+                window.currentBins = null;
+                window.currentLeftX = resultado.stats.percentile5;
+                
+                // Actualizar inputs
+                const leftXInput = document.getElementById('leftXInput');
+                if (leftXInput) {
+                    leftXInput.value = window.currentLeftX.toFixed(2);
+                }
+                
+                // Crear visualizaciones
+                crearHistograma(resultado.results, resultado.stats, null);
+                actualizarPanelEstadistico(resultado.stats, resultado.results.length);
+                calcularIzquierdaP(resultado.results, window.currentLeftX);
+                
+                if (resultado.perItemSamples) {
+                    crearTornado(resultado.results, resultado.perItemSamples, items);
+                }
+                
+                // Restaurar botón
+                const btn = document.getElementById('runSimulationBtn');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Ejecutar Simulación';
+                }
+                
+                console.log('✓ Test completado exitosamente');
+                
+            } catch (error) {
+                console.error('Error en test:', error);
+                alert('Error al ejecutar test: ' + error.message);
+            }
+        });
+        
+        // Sobrescribir función ejecutarSimulacion para usar datos de prueba
+        window.ejecutarSimulacion = async function() {
+            try {
+                const items = sampleItems.map(item => ({
+                    a: item.a,
+                    m: item.m,
+                    b: item.b,
+                    id: item.id,
+                    descripcion: item.descripcion
+                }));
+                
+                const iterations = parseInt(document.getElementById('iterationsInput').value) || 5000;
+                const numBins = document.getElementById('binsInput').value ? 
+                    parseInt(document.getElementById('binsInput').value) : null;
+                
+                const btn = document.getElementById('runSimulationBtn');
+                btn.disabled = true;
+                btn.textContent = 'Ejecutando...';
+                
+                const resultado = await runMonteCarlo(iterations, items, {
+                    seed: 12345,
+                    perItemSamples: true,
+                    progressCallback: (progress) => {
+                        btn.textContent = `Ejecutando... ${Math.round(progress)}%`;
+                    }
+                });
+                
+                window.currentSimulationResult = resultado;
+                window.currentBins = numBins;
+                window.currentLeftX = resultado.stats.percentile5;
+                
+                const leftXInput = document.getElementById('leftXInput');
+                if (leftXInput) {
+                    leftXInput.value = window.currentLeftX.toFixed(2);
+                }
+                
+                crearHistograma(resultado.results, resultado.stats, numBins);
+                actualizarPanelEstadistico(resultado.stats, resultado.results.length);
+                calcularIzquierdaP(resultado.results, window.currentLeftX);
+                
+                if (resultado.perItemSamples) {
+                    crearTornado(resultado.results, resultado.perItemSamples, items);
+                }
+                
+                btn.disabled = false;
+                btn.textContent = 'Ejecutar Simulación';
+                
+            } catch (error) {
+                alert('Error: ' + error.message);
+                console.error(error);
+                const btn = document.getElementById('runSimulationBtn');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Ejecutar Simulación';
+                }
+            }
+        };
+    </script>
+</body>
+</html>
+
