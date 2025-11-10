@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Histograma Interactivo</title>
+    <link rel="stylesheet" href="../styles.css">
+    <style>
+        .test-info {
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #2196f3;
+        }
+        .instructions {
+            background: #fff3e0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #ff9800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="test-info">
+            <h2>Test de Histograma Interactivo</h2>
+            <p>Este test verifica que las líneas se muestren y sean arrastrables.</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>Instrucciones:</h3>
+            <ol>
+                <li>Deberías ver dos líneas verticales en el histograma (roja y azul)</li>
+                <li>Pasa el mouse sobre la línea roja - el cursor debería cambiar a "ew-resize"</li>
+                <li>Haz clic y arrastra la línea roja - debería moverse y actualizar los valores</li>
+                <li>Los porcentajes y métricas deberían actualizarse en tiempo real</li>
+            </ol>
+        </div>
+
+        <main>
+            <section class="simulation-section" id="simulationSection">
+                <h2>Simulación Monte Carlo</h2>
+                
+                <div class="simulation-controls">
+                    <div class="control-group">
+                        <label for="iterationsInput">Iteraciones:</label>
+                        <input type="number" id="iterationsInput" value="5000" min="100" max="100000" step="100">
+                    </div>
+                    <button id="runSimulationBtn" class="btn-primary">Ejecutar Simulación</button>
+                </div>
+
+                <div class="visualization-container">
+                    <div class="histogram-area">
+                        <h3>Distribución de Resultados</h3>
+                        <div class="histogram-wrapper">
+                            <canvas id="histogramChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="stats-panel">
+                        <h3>Estadísticas</h3>
+                        <div class="stats-table" id="statsTable"></div>
+                        <div class="left-x-control">
+                            <label for="leftXInput">Izquierda X:</label>
+                            <input type="number" id="leftXInput" step="0.01">
+                            <span class="left-p-value" id="leftPValue">-</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="final-results" id="finalResults" style="display: none;">
+                    <h3>Resultados Finales</h3>
+                    <div class="results-grid">
+                        <div class="result-card">
+                            <div class="result-label">Certeza (95%)</div>
+                            <div class="result-value" id="certeza95_value">-</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Probabilidad de Cumplimiento</div>
+                            <div class="result-value" id="probCumplimiento_value">-</div>
+                        </div>
+                        <div class="result-card">
+                            <div class="result-label">Contingencia Necesaria</div>
+                            <div class="result-value" id="contingencia_value">-</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="../script.js"></script>
+    <script src="../visualizations.js"></script>
+    
+    <script>
+        // Datos de prueba
+        const sampleItems = [
+            { a: 10, m: 15, b: 20, id: '1', descripcion: 'Item 1' },
+            { a: 20, m: 25, b: 35, id: '2', descripcion: 'Item 2' },
+            { a: 8, m: 12, b: 18, id: '3', descripcion: 'Item 3' }
+        ];
+        
+        // Simular loadedData
+        window.loadedData = sampleItems.map(item => ({
+            item: item.id,
+            descripcion: item.descripcion,
+            minimo: item.a,
+            probable: item.m,
+            maximo: item.b,
+            pert: (item.a + 4 * item.m + item.b) / 6
+        }));
+        
+        // Simular totalsData
+        window.totalsData = {
+            sumMin: 38,
+            sumProbable: 52,
+            sumMax: 73,
+            sumPert: 53.5
+        };
+        
+        // Ejecutar simulación automáticamente
+        window.addEventListener('load', async () => {
+            console.log('Iniciando test de histograma interactivo...');
+            
+            try {
+                const items = sampleItems.map(item => ({
+                    a: item.a,
+                    m: item.m,
+                    b: item.b,
+                    id: item.id,
+                    descripcion: item.descripcion
+                }));
+                
+                const resultado = await runMonteCarlo(5000, items, {
+                    seed: 12345,
+                    perItemSamples: false
+                });
+                
+                console.log('Simulación completada');
+                console.log('Resultados:', resultado.results.length);
+                console.log('Stats:', resultado.stats);
+                
+                window.currentSimulationResult = resultado;
+                window.currentLeftX = resultado.stats.percentile5;
+                
+                const leftXInput = document.getElementById('leftXInput');
+                if (leftXInput) {
+                    leftXInput.value = window.currentLeftX.toFixed(2);
+                }
+                
+                // Crear visualizaciones
+                crearHistograma(resultado.results, resultado.stats, null);
+                actualizarPanelEstadistico(resultado.stats, resultado.results.length);
+                calcularIzquierdaP(resultado.results, window.currentLeftX);
+                
+                // Calcular métricas finales
+                if (window.totalsData && window.totalsData.sumProbable) {
+                    const finalMetrics = computeFinalMetrics(resultado.results, window.totalsData.sumProbable);
+                    actualizarResultadosFinales(finalMetrics);
+                }
+                
+                console.log('✓ Histograma creado. Verifica que las líneas sean visibles y arrastrables.');
+                
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error: ' + error.message);
+            }
+        });
+    </script>
+</body>
+</html>
+
